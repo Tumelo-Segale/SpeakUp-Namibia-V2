@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpeakUp Namibia - Business Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;0,9..144,800;1,9..144,400&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="flag-stripe"></div>
+    <nav id="navbar">
+        <div class="container">
+            <div class="navbar-inner">
+                <div class="logo-wrap">
+                    <div class="logo-icon"><svg viewBox="0 0 24 24">
+                            <path
+                                d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg></div>
+                    <div>
+                        <div class="logo-name">SpeakUp<span>Namibia</span></div>
+                        <div class="logo-sub">Business Portal</div>
+                    </div>
+                </div>
+                <button class="hamburger" id="bizHamburger" aria-label="Toggle menu" style="display:none">
+                    <svg id="ham-open" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"
+                        viewBox="0 0 24 24">
+                        <line x1="3" y1="6" x2="21" y2="6" />
+                        <line x1="3" y1="12" x2="21" y2="12" />
+                        <line x1="3" y1="18" x2="21" y2="18" />
+                    </svg>
+                    <svg id="ham-close" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"
+                        viewBox="0 0 24 24" style="display:none">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <div class="biz-layout">
+        <aside class="biz-sidebar" id="bizSidebar">
+            <div class="biz-sidebar-nav">
+                <button class="biz-nav-item active" id="navOverview"><svg fill="none" stroke="currentColor"
+                        stroke-width="2" viewBox="0 0 24 24">
+                        <line x1="18" y1="20" x2="18" y2="10" />
+                        <line x1="12" y1="20" x2="12" y2="4" />
+                        <line x1="6" y1="20" x2="6" y2="14" />
+                    </svg>Overview</button>
+                <button class="biz-nav-item" id="navReviews"><svg fill="none" stroke="currentColor" stroke-width="2"
+                        viewBox="0 0 24 24">
+                        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                    </svg>My Reviews</button>
+                <button class="biz-nav-item" id="navSettings"><svg fill="none" stroke="currentColor" stroke-width="2"
+                        viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+                    </svg>Settings</button>
+                <button class="biz-nav-item" id="navConsumerView"><svg fill="none" stroke="currentColor"
+                        stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                    </svg>All Reviews</button>
+                <button class="biz-nav-item" id="navRenew" style="display:none"><svg fill="none" stroke="currentColor"
+                        stroke-width="2" viewBox="0 0 24 24">
+                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                        <line x1="1" y1="10" x2="23" y2="10" />
+                    </svg>Renew Subscription</button>
+            </div>
+            <div class="biz-sidebar-footer">
+                <div class="notification-badge" id="notificationBadge" style="display:none"></div>
+                <button class="biz-nav-item" onclick="doLogout()" style="color:var(--nam-red)"><svg fill="none"
+                        stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>Logout</button>
+            </div>
+        </aside>
+        <main class="biz-main">
+            <div id="portal-container">
+                <div style="text-align:center;padding:3rem">
+                    <div class="spinner"
+                        style="width:40px;height:40px;border:4px solid var(--border);border-top-color:var(--nam-blue);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto">
+                    </div>
+                    <p style="margin-top:1rem;color:var(--fg-muted)">Loading...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+    <footer>
+        <div class="flag-stripe"></div>
+        <div class="container" style="padding-top:2rem; text-align:center; font-size:0.75rem; color:var(--fg-muted)">
+            <span>© <span id="footer-year"></span> SpeakUp Namibia — Business Portal</span>
+        </div>
+    </footer>
+
+    <!-- Write Review Modal -->
+    <div class="modal-overlay" id="write-review-modal" onclick="closeWriteReviewModal()">
+        <div class="modal-box" onclick="event.stopPropagation()" style="max-width:32rem">
+            <div class="modal-header">
+                <div style="display:flex;align-items:center;gap:0.75rem">
+                    <div class="modal-header-icon"><svg viewBox="0 0 24 24" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg></div>
+                    <div>
+                        <div class="modal-title">Write a Review as Business</div>
+                        <div class="modal-sub">Your review will appear publicly</div>
+                    </div>
+                </div><button class="modal-close" onclick="closeWriteReviewModal()"><svg width="18" height="18"
+                        fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-space">
+                    <div><label class="label">Business Name <span class="req">*</span></label><input class="input"
+                            id="biz-wr-biz" type="text" readonly></div>
+                    <div><label class="label">Category <span class="req">*</span></label>
+                        <div class="select-wrap"><select class="input" id="biz-wr-cat"
+                                style="padding:0.625rem 2.5rem 0.625rem 0.875rem"></select></div>
+                    </div>
+                    <div><label class="label">Your Rating <span class="req">*</span></label>
+                        <div style="display:flex;align-items:center;gap:0.5rem">
+                            <div class="stars-input" id="biz-wr-stars"></div><span class="rating-word"
+                                id="biz-wr-rating-word"></span>
+                        </div>
+                    </div>
+                    <div><label class="label">Review Title <span class="req">*</span></label><input class="input"
+                            id="biz-wr-title" type="text" placeholder="Summarise your experience"></div>
+                    <div><label class="label">Your Story <span class="req">*</span></label><textarea
+                            class="input textarea" id="biz-wr-content" rows="4"
+                            placeholder="Tell us what happened..."></textarea></div>
+                    <div class="modal-footer" style="padding-top:0.5rem"><button class="btn btn-outline"
+                            onclick="closeWriteReviewModal()">Cancel</button><button class="btn btn-primary"
+                            id="biz-wr-submit" onclick="submitBusinessReview()">Publish Review</button></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reply Modal -->
+    <div class="modal-overlay" id="reply-modal" onclick="closeReplyModal()">
+        <div class="modal-box reply-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div>
+                    <div class="modal-title">Reply as Verified Business</div>
+                    <div class="modal-sub" id="reply-modal-review-title"></div>
+                </div><button class="modal-close" onclick="closeReplyModal()"><svg width="18" height="18" fill="none"
+                        stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg></button>
+            </div>
+            <div class="modal-body">
+                <textarea class="input textarea" id="reply-text" rows="4"
+                    placeholder="Write your public response as the verified business..."></textarea>
+                <div class="modal-footer" style="margin-top:1rem"><button class="btn btn-outline"
+                        onclick="closeReplyModal()">Cancel</button><button class="btn btn-primary" id="submit-reply-btn"
+                        onclick="submitBusinessReply()">Post Reply</button></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal (Enhanced) -->
+    <div class="modal-overlay" id="forgot-password-modal" onclick="closeForgotPasswordModal()">
+        <div class="modal-box" onclick="event.stopPropagation()" style="max-width:400px">
+            <div class="modal-header">
+                <div class="modal-title">Reset Password</div>
+                <button class="modal-close" onclick="closeForgotPasswordModal()">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom:1rem; font-size:0.875rem; color:var(--fg-muted);">Enter your registered email. A
+                    temporary password will be generated and displayed below.</p>
+                <div class="form-space">
+                    <div><label class="label">Email</label><input class="input" id="reset-email" type="email"
+                            placeholder="business@example.com"></div>
+                    <div id="reset-err" class="form-err" style="display:none"></div>
+                    <div id="temp-password-display"
+                        style="display:none; margin-top:1rem; text-align:center; background:var(--bg); padding:1rem; border-radius:var(--radius); border:1px solid var(--border);">
+                        <div style="font-size:0.75rem; color:var(--fg-muted); margin-bottom:0.25rem;">YOUR TEMPORARY
+                            PASSWORD</div>
+                        <div style="font-family:'JetBrains Mono',monospace; font-size:1.5rem; font-weight:700; letter-spacing:2px; word-break:break-all;"
+                            id="temp-pwd-value"></div>
+                        <button class="btn btn-outline btn-sm" style="margin-top:0.75rem;"
+                            onclick="copyTempPassword()">Copy to Clipboard</button>
+                    </div>
+                    <button class="btn btn-primary" style="width:100%" onclick="doResetPassword()">Send Temporary
+                        Password</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="business.js"></script>
+</body>
+
+</html>
