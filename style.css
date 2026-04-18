@@ -1855,3 +1855,193 @@ footer {
   word-break: break-all;
   user-select: all;
 }
+
+/* ─── NEW FEATURE STYLES ─────────────────────────────────────────── */
+
+/* Notification Badge on sidebar bell */
+.notif-badge {
+  position: absolute;
+  top: 6px;
+  right: 12px;
+  background: var(--nam-red);
+  color: #fff;
+  font-size: 0.625rem;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
+}
+
+/* Notification list item */
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.notif-item:last-child {
+  border-bottom: none;
+}
+.notif-item:hover {
+  background: var(--bg);
+}
+.notif-item.unread {
+  background: rgba(0, 53, 128, 0.04);
+}
+.notif-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.notif-text {
+  font-size: 0.8125rem;
+  color: var(--fg);
+  line-height: 1.45;
+}
+.notif-time {
+  font-size: 0.7rem;
+  color: var(--fg-muted);
+  margin-top: 0.2rem;
+}
+
+/* Renewal reminder banner */
+.renewal-banner {
+  background: linear-gradient(
+    90deg,
+    rgba(201, 125, 16, 0.12),
+    rgba(201, 125, 16, 0.06)
+  );
+  border: 1px solid rgba(201, 125, 16, 0.35);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+.renewal-banner svg {
+  flex-shrink: 0;
+  color: var(--nam-gold);
+}
+
+/* Sentiment trend chart */
+.trend-chart-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+.trend-chart-svg {
+  width: 100%;
+  overflow: visible;
+}
+
+/* Review flagged indicator */
+.flagged-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.675rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--nam-gold);
+  background: rgba(201, 125, 16, 0.12);
+  border: 1px solid rgba(201, 125, 16, 0.25);
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+}
+
+/* Subscription history table */
+.sub-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+.sub-history-table th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.sub-history-table td {
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--fg);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.75rem;
+}
+.sub-history-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Business logo avatar */
+.biz-logo-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+}
+.biz-logo-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--nam-dark);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 2px solid var(--border);
+}
+
+/* Pause subscription style */
+.pause-banner {
+  background: rgba(0, 53, 128, 0.06);
+  border: 1px solid rgba(0, 53, 128, 0.2);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+/* Latest reviews spacing */
+.reviews-latest-list > .review-card {
+  margin-bottom: 1rem;
+}
+.reviews-latest-list > .review-card:last-child {
+  margin-bottom: 0;
+}
+
+/* Response rate metric */
+.response-rate-arc {
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+}

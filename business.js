@@ -1314,3 +1314,1004 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
+// ═══════════════════════════════════════════════════════════
+// NEW FEATURES — appended to business.js
+// ═══════════════════════════════════════════════════════════
+
+// ----- Notifications -----
+function getNotifications() {
+  const bizData = businesses.find((b) => b.id === currentBusiness.id);
+  const bizReviews = reviews.filter(
+    (r) =>
+      r.businessName.toLowerCase() ===
+      currentBusiness.businessName.toLowerCase()
+  );
+  const lastSeen = bizData.notifLastSeen || 0;
+  const notifs = [];
+
+  bizReviews.forEach((r) => {
+    if (new Date(r.date) > new Date(lastSeen)) {
+      notifs.push({
+        type: "review",
+        text: `New review: "${r.title}" — ${r.rating}★ by ${r.userName}`,
+        date: r.date,
+        unread: true,
+      });
+    }
+    (r.comments || []).forEach((c) => {
+      if (!c.isBusiness && new Date(c.date) > new Date(lastSeen)) {
+        notifs.push({
+          type: "comment",
+          text: `New comment on "${r.title}" by ${c.author}`,
+          date: c.date,
+          unread: true,
+        });
+      }
+    });
+  });
+
+  notifs.sort((a, b) => new Date(b.date) - new Date(a.date));
+  return notifs;
+}
+
+function openNotificationsModal() {
+  const notifs = getNotifications();
+  const listEl = document.getElementById("notif-list");
+  const subEl = document.getElementById("notif-modal-sub");
+  subEl.textContent = notifs.length
+    ? `${notifs.length} new item(s)`
+    : "No new activity";
+
+  const icons = {
+    review: `<svg width="16" height="16" fill="none" stroke="var(--nam-blue)" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>`,
+    comment: `<svg width="16" height="16" fill="none" stroke="var(--nam-gold)" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>`,
+  };
+
+  if (!notifs.length) {
+    listEl.innerHTML = `<div style="padding:2rem;text-align:center;color:var(--fg-muted);font-size:0.875rem">No new notifications since your last visit.</div>`;
+  } else {
+    listEl.innerHTML = notifs
+      .map(
+        (n) => `
+      <div class="notif-item ${n.unread ? "unread" : ""}">
+        <div class="notif-icon">${icons[n.type] || icons.review}</div>
+        <div>
+          <div class="notif-text">${esc(n.text)}</div>
+          <div class="notif-time">${formatDate(n.date)}</div>
+        </div>
+      </div>`
+      )
+      .join("");
+  }
+
+  // Mark as seen
+  const bizData = businesses.find((b) => b.id === currentBusiness.id);
+  bizData.notifLastSeen = new Date().toISOString();
+  saveBusinesses();
+  updateNotifBadge();
+
+  document.getElementById("notifications-modal").classList.add("open");
+}
+
+function closeNotificationsModal() {
+  document.getElementById("notifications-modal").classList.remove("open");
+}
+
+function updateNotifBadge() {
+  const badge = document.getElementById("notifBadge");
+  if (!badge || !currentBusiness) return;
+  const count = getNotifications().length;
+  if (count > 0) {
+    badge.textContent = count > 9 ? "9+" : count;
+    badge.style.display = "flex";
+  } else {
+    badge.style.display = "none";
+  }
+}
+
+// ----- Review Flagging -----
+let currentFlagReviewId = null;
+function openFlagModal(reviewId) {
+  currentFlagReviewId = reviewId;
+  document.getElementById("flag-reason").value = "";
+  document.getElementById("flag-details").value = "";
+  document.getElementById("flag-err").style.display = "none";
+  document.getElementById("flag-review-modal").classList.add("open");
+}
+function closeFlagModal() {
+  document.getElementById("flag-review-modal").classList.remove("open");
+  currentFlagReviewId = null;
+}
+function submitFlag() {
+  const reason = document.getElementById("flag-reason").value;
+  const details = document.getElementById("flag-details").value.trim();
+  const err = document.getElementById("flag-err");
+  if (!reason) {
+    err.textContent = "Please select a reason.";
+    err.style.display = "block";
+    return;
+  }
+  const revIdx = reviews.findIndex((r) => r.id === currentFlagReviewId);
+  if (revIdx === -1) return;
+  reviews[revIdx].flagged = {
+    reason,
+    details,
+    date: new Date().toISOString(),
+    flaggedBy: currentBusiness.id,
+  };
+  saveReviews();
+  closeFlagModal();
+  toast("Review flagged and sent to moderation queue.", "info");
+  if (currentTab === "reviews")
+    renderMyReviewsList(
+      reviews.filter(
+        (r) =>
+          r.businessName.toLowerCase() ===
+          currentBusiness.businessName.toLowerCase()
+      )
+    );
+  else if (currentTab === "consumerview") renderConsumerView();
+}
+
+// ----- Logo Upload -----
+let pendingLogoDataUrl = null;
+function openLogoModal() {
+  const bizData = businesses.find((b) => b.id === currentBusiness.id);
+  pendingLogoDataUrl = null;
+  document.getElementById("logo-err").style.display = "none";
+  const imgWrap = document.getElementById("logo-preview-img");
+  if (bizData && bizData.logoUrl) {
+    imgWrap.innerHTML = `<img src="${bizData.logoUrl}" style="width:100%;height:100%;object-fit:cover">`;
+  } else {
+    imgWrap.innerHTML = `<svg width="36" height="36" fill="none" stroke="var(--fg-muted)" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
+  }
+  document.getElementById("logo-upload-modal").classList.add("open");
+}
+function closeLogoModal() {
+  document.getElementById("logo-upload-modal").classList.remove("open");
+  pendingLogoDataUrl = null;
+}
+function previewLogoUpload(input) {
+  const file = input.files[0];
+  const err = document.getElementById("logo-err");
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) {
+    err.textContent = "File must be under 2 MB.";
+    err.style.display = "block";
+    return;
+  }
+  err.style.display = "none";
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    pendingLogoDataUrl = e.target.result;
+    document.getElementById(
+      "logo-preview-img"
+    ).innerHTML = `<img src="${pendingLogoDataUrl}" style="width:100%;height:100%;object-fit:cover">`;
+  };
+  reader.readAsDataURL(file);
+}
+function saveLogoUpload() {
+  if (!pendingLogoDataUrl) {
+    closeLogoModal();
+    return;
+  }
+  const bizData = businesses.find((b) => b.id === currentBusiness.id);
+  bizData.logoUrl = pendingLogoDataUrl;
+  saveBusinesses();
+  closeLogoModal();
+  toast("Logo updated successfully!");
+  renderDashboard();
+}
+function getBizLogo(size = 36) {
+  const bizData = businesses.find((b) => b.id === currentBusiness.id);
+  if (bizData && bizData.logoUrl) {
+    return `<img src="${bizData.logoUrl}" class="biz-logo-avatar" style="width:${size}px;height:${size}px">`;
+  }
+  const initials = (currentBusiness.businessName || "?")
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  return `<div class="biz-logo-placeholder" style="width:${size}px;height:${size}px;font-size:${Math.round(
+    size * 0.3
+  )}px">${initials}</div>`;
+}
+
+// ----- Filtered CSV Export -----
+function openCsvModal() {
+  const bizData = businesses.find((b) => b.id === currentBusiness.id);
+  if (!checkSubscriptionAndWarn(bizData)) return;
+  // Set default dates
+  const now = new Date();
+  const fromDate = new Date(now);
+  fromDate.setFullYear(fromDate.getFullYear() - 1);
+  document.getElementById("csv-from").value = fromDate
+    .toISOString()
+    .split("T")[0];
+  document.getElementById("csv-to").value = now.toISOString().split("T")[0];
+  document.getElementById("csv-rating").value = "all";
+  updateCsvCount();
+  document.getElementById("csv-export-modal").classList.add("open");
+  document
+    .getElementById("csv-from")
+    .addEventListener("change", updateCsvCount);
+  document.getElementById("csv-to").addEventListener("change", updateCsvCount);
+  document
+    .getElementById("csv-rating")
+    .addEventListener("change", updateCsvCount);
+}
+function closeCsvModal() {
+  document.getElementById("csv-export-modal").classList.remove("open");
+}
+function getFilteredExportReviews() {
+  const from = document.getElementById("csv-from")?.value;
+  const to = document.getElementById("csv-to")?.value;
+  const rating = document.getElementById("csv-rating")?.value;
+  let f = reviews.filter(
+    (r) =>
+      r.businessName.toLowerCase() ===
+      currentBusiness.businessName.toLowerCase()
+  );
+  if (from) f = f.filter((r) => r.date >= from);
+  if (to) f = f.filter((r) => r.date <= to + "T23:59:59");
+  if (rating && rating !== "all")
+    f = f.filter((r) => r.rating === parseInt(rating));
+  return f;
+}
+function updateCsvCount() {
+  const count = getFilteredExportReviews().length;
+  const el = document.getElementById("csv-count");
+  if (el)
+    el.textContent = `${count} review${
+      count !== 1 ? "s" : ""
+    } match your filters`;
+}
+function doFilteredCsvExport() {
+  const filtered = getFilteredExportReviews();
+  if (!filtered.length) {
+    toast("No reviews match the selected filters.", "info");
+    return;
+  }
+  const csvRows = [
+    ["Date", "Rating", "Title", "Content", "User", "Reply Count"],
+  ];
+  filtered.forEach((r) =>
+    csvRows.push([
+      r.date,
+      r.rating,
+      r.title,
+      r.content.replace(/,/g, " "),
+      r.userName,
+      (r.comments || []).length,
+    ])
+  );
+  const csvContent = csvRows
+    .map((row) => row.map((cell) => `"${cell}"`).join(","))
+    .join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `reviews_${currentBusiness.businessName.replace(
+    /\s/g,
+    "_"
+  )}_filtered.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  closeCsvModal();
+  toast(`Exported ${filtered.length} reviews.`);
+}
+
+// ----- PDF Monthly Report -----
+function generatePDFReport() {
+  const bizData = businesses.find((b) => b.id === currentBusiness.id);
+  if (!checkSubscriptionAndWarn(bizData)) return;
+  const bizReviews = reviews.filter(
+    (r) =>
+      r.businessName.toLowerCase() ===
+      currentBusiness.businessName.toLowerCase()
+  );
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const monthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+  const monthReviews = bizReviews.filter((r) => {
+    const d = new Date(r.date);
+    return d >= monthStart && d <= monthEnd;
+  });
+  const avg = bizReviews.length
+    ? (
+        bizReviews.reduce((a, r) => a + r.rating, 0) / bizReviews.length
+      ).toFixed(1)
+    : "N/A";
+  const monthAvg = monthReviews.length
+    ? (
+        monthReviews.reduce((a, r) => a + r.rating, 0) / monthReviews.length
+      ).toFixed(1)
+    : "N/A";
+  const totalWithReply = bizReviews.filter((r) =>
+    (r.comments || []).some((c) => c.isBusiness)
+  ).length;
+  const responseRate = bizReviews.length
+    ? Math.round((totalWithReply / bizReviews.length) * 100)
+    : 0;
+  const dist = [5, 4, 3, 2, 1].map((s) => ({
+    star: s,
+    count: bizReviews.filter((r) => r.rating === s).length,
+  }));
+  const monthName = monthStart.toLocaleString("en-GB", {
+    month: "long",
+    year: "numeric",
+  });
+
+  // Build trend data
+  const trendData = buildWeeklyTrend(bizReviews);
+
+  const reportHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>SpeakUp Report — ${esc(
+    currentBusiness.businessName
+  )}</title>
+  <style>
+    body{font-family:Georgia,serif;max-width:800px;margin:0 auto;padding:2rem;color:#18202e;background:#fff}
+    h1{font-size:1.75rem;margin-bottom:0.25rem;color:#003580}
+    .subtitle{color:#6b7280;font-size:0.875rem;margin-bottom:2rem}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem}
+    .card{border:1px solid #e0ddd5;border-radius:4px;padding:1rem;text-align:center}
+    .big{font-size:2rem;font-weight:700;color:#c97d10}
+    .label{font-size:0.75rem;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-top:0.25rem}
+    table{width:100%;border-collapse:collapse;font-size:0.875rem}
+    th{background:#f8f6f0;padding:0.5rem 0.75rem;text-align:left;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;border-bottom:1px solid #e0ddd5}
+    td{padding:0.625rem 0.75rem;border-bottom:1px solid #e0ddd5}
+    .bar-row{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem}
+    .bar-bg{flex:1;background:#e0ddd5;border-radius:999px;height:8px;overflow:hidden}
+    .bar-fill{height:100%;background:#c97d10;border-radius:999px}
+    h3{font-size:1rem;font-weight:700;margin:1.5rem 0 0.75rem;color:#003580}
+    .footer{margin-top:3rem;font-size:0.75rem;color:#6b7280;border-top:1px solid #e0ddd5;padding-top:1rem;text-align:center}
+    @media print{body{padding:1rem}}
+  </style></head><body>
+  <h1>SpeakUp Namibia — Monthly Report</h1>
+  <div class="subtitle">${esc(currentBusiness.businessName)} &bull; ${esc(
+    currentBusiness.category
+  )} &bull; ${monthName}</div>
+  <div class="grid">
+    <div class="card"><div class="big">${
+      bizReviews.length
+    }</div><div class="label">Total Reviews</div></div>
+    <div class="card"><div class="big">${avg}</div><div class="label">All-Time Avg Rating</div></div>
+    <div class="card"><div class="big">${responseRate}%</div><div class="label">Response Rate</div></div>
+  </div>
+  <h3>This Month (${monthName})</h3>
+  <div class="grid" style="grid-template-columns:1fr 1fr">
+    <div class="card"><div class="big">${
+      monthReviews.length
+    }</div><div class="label">New Reviews</div></div>
+    <div class="card"><div class="big">${monthAvg}</div><div class="label">Monthly Avg Rating</div></div>
+  </div>
+  <h3>Rating Breakdown</h3>
+  ${dist
+    .map(
+      (
+        d
+      ) => `<div class="bar-row"><span style="width:2rem;text-align:right;font-weight:600">★${
+        d.star
+      }</span>
+    <div class="bar-bg"><div class="bar-fill" style="width:${
+      bizReviews.length ? Math.round((d.count / bizReviews.length) * 100) : 0
+    }%"></div></div>
+    <span style="width:2rem;color:#6b7280">${d.count}</span></div>`
+    )
+    .join("")}
+  <h3>Rating Trend (last 6 weeks)</h3>
+  <table><tr><th>Week</th><th>Reviews</th><th>Avg Rating</th></tr>
+  ${trendData
+    .slice(-6)
+    .map(
+      (w) =>
+        `<tr><td>${w.label}</td><td>${w.count}</td><td>${
+          w.avg || "—"
+        }</td></tr>`
+    )
+    .join("")}
+  </table>
+  <h3>Recent Reviews Snapshot</h3>
+  <table><tr><th>Date</th><th>Rating</th><th>Title</th><th>Replied</th></tr>
+  ${bizReviews
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 10)
+    .map(
+      (r) => `<tr>
+    <td>${formatDate(r.date)}</td><td>★${r.rating}</td><td>${esc(r.title)}</td>
+    <td>${
+      (r.comments || []).some((c) => c.isBusiness) ? "Yes" : "No"
+    }</td></tr>`
+    )
+    .join("")}
+  </table>
+  <div class="footer">Generated by SpeakUp Namibia Business Portal &bull; ${new Date().toLocaleDateString(
+    "en-GB",
+    { day: "numeric", month: "long", year: "numeric" }
+  )}</div>
+  </body></html>`;
+
+  const blob = new Blob([reportHtml], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, "_blank");
+  if (win)
+    setTimeout(() => {
+      win.print();
+      URL.revokeObjectURL(url);
+    }, 800);
+  else {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `report_${currentBusiness.businessName.replace(
+      /\s/g,
+      "_"
+    )}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+  toast("Report opened — use Print to PDF to save.");
+}
+
+// ----- Weekly Trend Builder -----
+function buildWeeklyTrend(bizReviews, weeks = 8) {
+  const data = [];
+  const now = new Date();
+  for (let i = weeks - 1; i >= 0; i--) {
+    const end = new Date(now);
+    end.setDate(end.getDate() - i * 7);
+    const start = new Date(end);
+    start.setDate(start.getDate() - 6);
+    const bucket = bizReviews.filter((r) => {
+      const d = new Date(r.date);
+      return d >= start && d <= end;
+    });
+    const avg = bucket.length
+      ? (bucket.reduce((a, r) => a + r.rating, 0) / bucket.length).toFixed(1)
+      : null;
+    data.push({
+      label: start.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+      }),
+      count: bucket.length,
+      avg: avg,
+      avgNum: avg ? parseFloat(avg) : null,
+    });
+  }
+  return data;
+}
+
+function buildMonthlyTrend(bizReviews, months = 6) {
+  const data = [];
+  const now = new Date();
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    const bucket = bizReviews.filter((r) => {
+      const rd = new Date(r.date);
+      return rd >= d && rd <= end;
+    });
+    const avg = bucket.length
+      ? (bucket.reduce((a, r) => a + r.rating, 0) / bucket.length).toFixed(1)
+      : null;
+    data.push({
+      label: d.toLocaleDateString("en-GB", { month: "short", year: "2-digit" }),
+      count: bucket.length,
+      avg: avg,
+      avgNum: avg ? parseFloat(avg) : null,
+    });
+  }
+  return data;
+}
+
+function renderTrendChart(trendData) {
+  const w = 480,
+    h = 120,
+    padL = 28,
+    padR = 10,
+    padT = 14,
+    padB = 30;
+  const pts = trendData.filter((d) => d.avgNum !== null);
+  if (pts.length < 2)
+    return `<div style="color:var(--fg-muted);font-size:0.8125rem;text-align:center;padding:1.5rem">Not enough data for a trend chart yet.</div>`;
+  const maxAvg = 5,
+    minAvg = 1;
+  const xStep = (w - padL - padR) / (trendData.length - 1);
+  const yScale = (v) =>
+    padT + (1 - (v - minAvg) / (maxAvg - minAvg)) * (h - padT - padB);
+
+  // Y grid lines at 1,2,3,4,5
+  let gridLines = "";
+  for (let v = 1; v <= 5; v++) {
+    const y = yScale(v);
+    gridLines += `<line x1="${padL}" y1="${y}" x2="${
+      w - padR
+    }" y2="${y}" stroke="var(--border)" stroke-width="0.75" stroke-dasharray="4,4"/>
+    <text x="${padL - 4}" y="${
+      y + 4
+    }" font-size="8" fill="var(--fg-muted)" text-anchor="end">${v}</text>`;
+  }
+
+  // Build polyline points for ALL data (use midpoint for null)
+  const allPoints = trendData.map((d, i) => {
+    const x = padL + i * xStep;
+    const y = d.avgNum !== null ? yScale(d.avgNum) : null;
+    return { x, y, d };
+  });
+
+  // Build path segments (skip null gaps)
+  let path = "";
+  let inLine = false;
+  allPoints.forEach((p, i) => {
+    if (p.y !== null) {
+      path += inLine
+        ? ` L${p.x.toFixed(1)},${p.y.toFixed(1)}`
+        : `M${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+      inLine = true;
+    } else {
+      inLine = false;
+    }
+  });
+
+  // X-axis labels
+  let xLabels = "";
+  trendData.forEach((d, i) => {
+    if (i % 2 === 0 || i === trendData.length - 1) {
+      const x = padL + i * xStep;
+      xLabels += `<text x="${x}" y="${
+        h - 4
+      }" font-size="8" fill="var(--fg-muted)" text-anchor="middle">${esc(
+        d.label
+      )}</text>`;
+    }
+  });
+
+  // Dots and tooltips
+  let dots = "";
+  allPoints.forEach((p) => {
+    if (p.y !== null) {
+      dots += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(
+        1
+      )}" r="3.5" fill="var(--nam-blue)" stroke="#fff" stroke-width="1.5">
+        <title>${p.d.label}: ${p.d.avg} avg (${p.d.count} review${
+        p.d.count !== 1 ? "s" : ""
+      })</title></circle>`;
+    }
+  });
+
+  return `<svg class="trend-chart-svg" viewBox="0 0 ${w} ${h}" style="max-height:${h}px">
+    ${gridLines}
+    <path d="${path}" fill="none" stroke="var(--nam-blue)" stroke-width="2" stroke-linejoin="round"/>
+    ${dots}
+    ${xLabels}
+  </svg>`;
+}
+
+// ----- Response Rate -----
+function getResponseRate(bizReviews) {
+  if (!bizReviews.length) return 0;
+  const replied = bizReviews.filter((r) =>
+    (r.comments || []).some((c) => c.isBusiness)
+  ).length;
+  return Math.round((replied / bizReviews.length) * 100);
+}
+
+function renderResponseRateArc(pct) {
+  const r = 30,
+    cx = 40,
+    cy = 40,
+    stroke = 8;
+  const circ = 2 * Math.PI * r;
+  const offset = circ * (1 - pct / 100);
+  const color =
+    pct >= 70
+      ? "var(--nam-green)"
+      : pct >= 40
+      ? "var(--nam-gold)"
+      : "var(--nam-red)";
+  return `<svg class="response-rate-arc" viewBox="0 0 80 80" width="80" height="80">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${stroke}"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="${stroke}"
+      stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round"
+      transform="rotate(-90 ${cx} ${cy})"/>
+    <text x="${cx}" y="${
+    cy + 5
+  }" text-anchor="middle" font-size="14" font-weight="700" fill="${color}">${pct}%</text>
+  </svg>`;
+}
+
+// ----- Pause Subscription -----
+function pauseSubscription() {
+  const bizData = businesses.find((b) => b.id === currentBusiness.id);
+  if (!bizData) return;
+  if (bizData.paused) {
+    // Unpause
+    delete bizData.paused;
+    delete bizData.pausedOn;
+    saveBusinesses();
+    toast("Subscription resumed.", "success");
+  } else {
+    // Pause — freeze expiry relative to today
+    bizData.paused = true;
+    bizData.pausedOn = new Date().toISOString();
+    saveBusinesses();
+    toast(
+      "Subscription paused. Your data and verified status are preserved.",
+      "info"
+    );
+  }
+  renderSettings(bizData);
+}
+
+// ----- Renewal Reminder Banner -----
+function maybeShowRenewalBanner(bizData) {
+  const banner = document.getElementById("renewal-banner");
+  if (!banner || !bizData) return;
+  const expiry = new Date(bizData.subscriptionExpiry);
+  const daysLeft = Math.ceil((expiry - new Date()) / (1000 * 60 * 60 * 24));
+  if (daysLeft > 0 && daysLeft <= 7) {
+    banner.style.display = "block";
+    banner.innerHTML = `<div class="renewal-banner">
+      <svg width="18" height="18" fill="none" stroke="var(--nam-gold)" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <div style="flex:1"><strong>Subscription expiring soon</strong> — Your subscription expires in <strong>${daysLeft} day${
+      daysLeft !== 1 ? "s" : ""
+    }</strong> on ${formatDate(bizData.subscriptionExpiry)}.</div>
+      <button class="btn btn-gold btn-sm" onclick="switchTab('renew')">Renew Now</button>
+    </div>`;
+    // Also show toast if first time seeing it this session
+    const toastKey = `renewal_toast_${currentBusiness.id}`;
+    if (!sessionStorage.getItem(toastKey)) {
+      setTimeout(
+        () =>
+          toast(
+            `Your subscription expires in ${daysLeft} day${
+              daysLeft !== 1 ? "s" : ""
+            }. Renew to keep your verified status!`,
+            "info"
+          ),
+        1200
+      );
+      sessionStorage.setItem(toastKey, "1");
+    }
+  } else {
+    banner.style.display = "none";
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// PATCHED FUNCTIONS — override existing ones
+// ═══════════════════════════════════════════════════════════
+
+// Override renderOverview to include trend chart + response rate
+const _originalRenderOverview = renderOverview;
+renderOverview = function (bizReviews, avg) {
+  const dist = [5, 4, 3, 2, 1].map((r) => ({
+    star: r,
+    count: bizReviews.filter((rev) => rev.rating === r).length,
+    pct: bizReviews.length
+      ? Math.round(
+          (bizReviews.filter((rev) => rev.rating === r).length /
+            bizReviews.length) *
+            100
+        )
+      : 0,
+  }));
+
+  const responseRate = getResponseRate(bizReviews);
+  const trendData = buildMonthlyTrend(bizReviews, 6);
+  const bizData = businesses.find((b) => b.id === currentBusiness.id);
+
+  document.getElementById("dash-content").innerHTML = `
+    <div class="dashboard-stats">
+      <div class="dash-stat-card"><div class="dash-stat-value">${
+        bizReviews.length
+      }</div><div class="dash-stat-label">Total Reviews</div></div>
+      <div class="dash-stat-card"><div class="dash-stat-value" style="color:var(--nam-gold)">${avg}</div><div class="dash-stat-label">Avg Rating</div></div>
+      <div class="dash-stat-card"><div class="dash-stat-value" style="color:var(--nam-green)">${
+        bizReviews.filter((r) => (r.comments || []).some((c) => c.isBusiness))
+          .length
+      }</div><div class="dash-stat-label">Replied</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr auto;gap:1rem;margin-bottom:1rem;align-items:stretch">
+      <div class="trend-chart-wrap" style="margin-bottom:0">
+        <div style="font-weight:600;margin-bottom:0.75rem;font-size:0.9375rem">Rating Trend <span style="font-size:0.75rem;font-weight:400;color:var(--fg-muted)">(monthly)</span></div>
+        ${renderTrendChart(trendData)}
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:130px;text-align:center">
+        ${renderResponseRateArc(responseRate)}
+        <div style="font-weight:600;font-size:0.8125rem;margin-top:0.5rem">Response Rate</div>
+        <div style="font-size:0.7rem;color:var(--fg-muted);margin-top:0.2rem">${
+          bizReviews.filter((r) => (r.comments || []).some((c) => c.isBusiness))
+            .length
+        } / ${bizReviews.length} replied</div>
+      </div>
+    </div>
+
+    <div class="rating-dist" style="background:var(--card);border-radius:var(--radius);padding:1rem;border:1px solid var(--border);margin-bottom:1rem">
+      <div style="font-weight:600;margin-bottom:0.875rem">Rating Breakdown</div>
+      ${dist
+        .map(
+          (
+            d
+          ) => `<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+        <span style="font-weight:600;width:2rem;text-align:right">★ ${d.star}</span>
+        <div style="flex:1;background:var(--border);border-radius:999px;height:8px;overflow:hidden"><div style="height:100%;border-radius:999px;background:var(--nam-gold);width:${d.pct}%"></div></div>
+        <span style="width:1.5rem;color:var(--fg-muted)">${d.count}</span></div>`
+        )
+        .join("")}
+    </div>
+
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+      <button class="btn btn-outline btn-sm" onclick="openCsvModal()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+      <button class="btn btn-outline btn-sm" onclick="generatePDFReport()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        PDF Report
+      </button>
+    </div>`;
+};
+
+// Override renderMyReviewsList to add flag button + spacing
+const _originalRenderMyReviewsList = renderMyReviewsList;
+renderMyReviewsList = function (bizReviews) {
+  if (!bizReviews.length) {
+    document.getElementById(
+      "dash-content"
+    ).innerHTML = `<p style="color:var(--fg-muted);text-align:center;padding:2rem 0">No reviews for your business yet.</p>`;
+    return;
+  }
+  document.getElementById("dash-content").innerHTML =
+    `<div class="reviews-latest-list" style="display:flex;flex-direction:column;gap:1rem">` +
+    bizReviews
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .map((r) => {
+        const isFlagged = !!r.flagged;
+        const hasReply = (r.comments || []).some((c) => c.isBusiness);
+        return `<div style="background:var(--bg);border-radius:var(--radius);padding:1rem;border-left:3px solid ${getRatingColor(
+          r.rating
+        )};margin-bottom:1rem">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem">
+          <div>
+            <div style="font-weight:600">${esc(r.title)}</div>
+            <div style="font-size:0.75rem;color:var(--fg-muted)">${esc(
+              r.userName
+            )} · ${formatDate(r.date)}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <div style="background:${getRatingColor(
+              r.rating
+            )}18;padding:0.25rem 0.625rem;border-radius:var(--radius);font-weight:700">${
+          r.rating
+        }</div>
+          </div>
+        </div>
+        <div style="font-size:0.875rem;color:var(--fg-muted);margin-bottom:0.75rem">${esc(
+          r.content
+        )}</div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center">
+          ${
+            !hasReply
+              ? `<button class="btn btn-outline btn-sm" onclick="openReplyModal(${r.id})">Reply as Business</button>`
+              : `<span style="font-size:0.75rem;color:var(--nam-green);font-weight:600">✓ Replied</span>`
+          }
+          ${
+            isFlagged
+              ? `<span class="flagged-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>Flagged</span>`
+              : `<button class="btn btn-ghost btn-sm" style="color:var(--nam-gold);font-size:0.75rem" onclick="openFlagModal(${r.id})">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>Flag
+              </button>`
+          }
+        </div>
+      </div>`;
+      })
+      .join("") +
+    `</div>`;
+};
+
+// Override renderSettings to add social links, logo upload, pause, subscription history
+const _originalRenderSettings = renderSettings;
+renderSettings = function (bizData) {
+  const isActive = isSubscriptionActive(bizData);
+  const isPaused = !!(bizData && bizData.paused);
+
+  // Build payment history rows
+  const payHistory = (bizData && bizData.paymentHistory) || [];
+  if (bizData && bizData.lastPaymentDate && bizData.lastPaymentRef) {
+    if (!payHistory.some((p) => p.ref === bizData.lastPaymentRef)) {
+      payHistory.unshift({
+        date: bizData.lastPaymentDate,
+        ref: bizData.lastPaymentRef,
+        amount: "N$200",
+      });
+    }
+  }
+
+  const logoHtml = `
+    <div style="background:var(--card);border-radius:var(--radius);padding:1rem;border:1px solid var(--border);margin-bottom:1.5rem">
+      <div style="font-weight:600;margin-bottom:0.875rem">Business Logo / Avatar</div>
+      <div style="display:flex;align-items:center;gap:1rem">
+        ${getBizLogo(60)}
+        <div>
+          <button class="btn btn-outline btn-sm" onclick="openLogoModal()" ${
+            !isActive ? "disabled" : ""
+          }>Upload Logo</button>
+          <div style="font-size:0.75rem;color:var(--fg-muted);margin-top:0.35rem">Appears on your verified badge and replies</div>
+        </div>
+      </div>
+    </div>`;
+
+  const socialHtml = `
+    <div style="background:var(--card);border-radius:var(--radius);padding:1rem;border:1px solid var(--border);margin-bottom:1.5rem">
+      <div style="font-weight:600;margin-bottom:0.875rem">Contact & Social Links</div>
+      <div class="form-space">
+        <div><label class="label">Website</label><input class="input" id="settings-website" type="url" placeholder="https://yourbusiness.com" value="${esc(
+          (bizData && bizData.website) || ""
+        )}" ${!isActive ? "disabled" : ""}></div>
+        <div><label class="label">Phone</label><input class="input" id="settings-phone" type="tel" placeholder="+264 61 000 0000" value="${esc(
+          (bizData && bizData.phone) || ""
+        )}" ${!isActive ? "disabled" : ""}></div>
+        <div><label class="label">Facebook / Instagram handle</label><input class="input" id="settings-social" type="text" placeholder="@yourbusiness" value="${esc(
+          (bizData && bizData.social) || ""
+        )}" ${!isActive ? "disabled" : ""}></div>
+        <button class="btn btn-primary btn-sm" onclick="saveSocialLinks()" ${
+          !isActive ? "disabled" : ""
+        }>Save Links</button>
+      </div>
+    </div>`;
+
+  const subHistoryHtml = `
+    <div style="background:var(--card);border-radius:var(--radius);padding:1rem;border:1px solid var(--border);margin-bottom:1.5rem">
+      <div style="font-weight:600;margin-bottom:0.875rem">Subscription History</div>
+      ${
+        payHistory.length
+          ? `<div style="overflow-x:auto"><table class="sub-history-table">
+        <tr><th>Date</th><th>Amount</th><th>Reference</th></tr>
+        ${payHistory
+          .map(
+            (p) =>
+              `<tr><td>${formatDate(p.date)}</td><td>${esc(
+                p.amount || "N$200"
+              )}</td><td>${esc(p.ref)}</td></tr>`
+          )
+          .join("")}
+      </table></div>`
+          : `<p style="font-size:0.8125rem;color:var(--fg-muted)">No payment records on file yet.</p>`
+      }
+    </div>`;
+
+  const pauseHtml = `
+    <div style="background:var(--card);border-radius:var(--radius);padding:1rem;border:1.5px solid rgba(0,53,128,0.2);margin-bottom:1.5rem">
+      <div style="display:flex;align-items:flex-start;gap:0.75rem;margin-bottom:0.875rem">
+        <svg width="18" height="18" fill="none" stroke="var(--nam-blue)" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/></svg>
+        <div>
+          <div style="font-weight:600;color:var(--nam-blue)">Pause Subscription</div>
+          <div style="font-size:0.8125rem;color:var(--fg-muted);margin-top:0.25rem">Temporarily pause your account without losing your data or verified status. ${
+            isPaused
+              ? `<strong>Paused since ${formatDate(bizData.pausedOn)}</strong>.`
+              : ""
+          }</div>
+        </div>
+      </div>
+      <button class="btn btn-sm" style="background:rgba(0,53,128,0.1);color:var(--nam-blue);border:1px solid rgba(0,53,128,0.2)" onclick="pauseSubscription()">
+        ${isPaused ? "Resume Subscription" : "Pause Subscription"}
+      </button>
+    </div>`;
+
+  document.getElementById("dash-content").innerHTML =
+    logoHtml +
+    `<div style="background:var(--card);border-radius:var(--radius);padding:1rem;border:1px solid var(--border);margin-bottom:1.5rem">
+      <div style="font-weight:600;margin-bottom:0.875rem">Business Information</div>
+      <div><label class="label">Business Name</label><input class="input" id="settings-biz-name" type="text" value="${esc(
+        currentBusiness.businessName
+      )}" ${!isActive ? "disabled" : ""}></div>
+      <div style="margin-top:0.75rem"><label class="label">Category</label><div class="select-wrap"><select class="input" id="settings-cat" ${
+        !isActive ? "disabled" : ""
+      }>${CATEGORIES.map(
+      (c) =>
+        `<option value="${c}" ${
+          c === currentBusiness.category ? "selected" : ""
+        }>${esc(c)}</option>`
+    ).join("")}</select></div></div>
+      <button class="btn btn-primary btn-sm" style="margin-top:1rem" onclick="saveProfileChanges()" ${
+        !isActive ? "disabled" : ""
+      }>Save Changes</button>
+    </div>` +
+    socialHtml +
+    `<div style="background:var(--card);border-radius:var(--radius);padding:1rem;border:1px solid var(--border);margin-bottom:1.5rem">
+      <div style="font-weight:600;margin-bottom:0.875rem">Change Password</div>
+      <div class="form-space">
+        <div><label class="label">New Password</label><input class="input" id="dash-new-pwd" type="password" placeholder="At least 6 characters"></div>
+        <div><label class="label">Confirm Password</label><input class="input" id="dash-confirm-pwd" type="password" placeholder="Repeat password"></div>
+        <button class="btn btn-primary btn-sm" onclick="saveDashPassword()">Save Password</button>
+      </div>
+    </div>` +
+    subHistoryHtml +
+    pauseHtml +
+    `<div style="background:var(--card);border-radius:var(--radius);padding:1rem;border:1.5px solid rgba(139,26,14,0.25)">
+      <div style="display:flex;align-items:flex-start;gap:0.75rem;margin-bottom:0.875rem">
+        <svg width="18" height="18" fill="none" stroke="var(--nam-red)" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div><div style="font-weight:600;color:var(--nam-red)">Danger Zone</div><div style="font-size:0.8125rem;color:var(--fg-muted);margin-top:0.25rem">Permanently delete your business account and all associated data. This action cannot be undone.</div></div>
+      </div>
+      <button class="btn btn-danger" onclick="openDeleteAccountModal()">Delete Account</button>
+    </div>`;
+};
+
+// ----- Social Links Save -----
+function saveSocialLinks() {
+  const bizData = businesses.find((b) => b.id === currentBusiness.id);
+  if (!checkSubscriptionAndWarn(bizData)) return;
+  bizData.website =
+    document.getElementById("settings-website")?.value.trim() || "";
+  bizData.phone = document.getElementById("settings-phone")?.value.trim() || "";
+  bizData.social =
+    document.getElementById("settings-social")?.value.trim() || "";
+  saveBusinesses();
+  toast("Contact links saved.");
+}
+
+// Override renderPortal to call maybeShowRenewalBanner and updateNotifBadge
+const _originalRenderPortal = renderPortal;
+renderPortal = function () {
+  const sidebar = document.getElementById("bizSidebar"),
+    main = document.querySelector(".biz-main"),
+    hamburger = document.getElementById("bizHamburger");
+  if (!currentBusiness) {
+    sidebar.style.display = "none";
+    main.style.marginLeft = "0";
+    hamburger.style.display = "none";
+    renderAuth();
+  } else {
+    sidebar.style.display = "flex";
+    hamburger.style.display = window.innerWidth < 768 ? "flex" : "none";
+    main.style.marginLeft = window.innerWidth >= 768 ? "260px" : "0";
+    const bizData = businesses.find((b) => b.id === currentBusiness.id);
+    document.getElementById("navRenew").style.display = !isSubscriptionActive(
+      bizData
+    )
+      ? "flex"
+      : "none";
+    maybeShowRenewalBanner(bizData);
+    updateNotifBadge();
+    renderDashboard();
+  }
+};
+
+// Wire up notifications nav button (deferred to avoid race condition)
+document.addEventListener("DOMContentLoaded", () => {
+  const notifBtn = document.getElementById("navNotifications");
+  if (notifBtn) notifBtn.addEventListener("click", openNotificationsModal);
+  // Add to escape key handler
+  document.addEventListener(
+    "keydown",
+    (e) => {
+      if (e.key === "Escape") {
+        closeNotificationsModal();
+        closeFlagModal();
+        closeLogoModal();
+        closeCsvModal();
+      }
+    },
+    { capture: false }
+  );
+  // Add notifications to the tab map
+  const origUpdateActiveNav = updateActiveNav;
+  updateActiveNav = function () {
+    document
+      .querySelectorAll(".biz-nav-item")
+      .forEach((el) => el.classList.remove("active"));
+    const map = {
+      overview: "navOverview",
+      reviews: "navReviews",
+      settings: "navSettings",
+      consumerview: "navConsumerView",
+      renew: "navRenew",
+    };
+    if (map[currentTab])
+      document.getElementById(map[currentTab]).classList.add("active");
+  };
+});

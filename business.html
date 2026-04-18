@@ -64,6 +64,13 @@
                         <path
                             d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
                     </svg>Settings</button>
+                <button class="biz-nav-item" id="navNotifications" style="position:relative">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 01-3.46 0"/>
+                    </svg>Notifications
+                    <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+                </button>
                 <button class="biz-nav-item" id="navConsumerView"><svg fill="none" stroke="currentColor"
                         stroke-width="2" viewBox="0 0 24 24">
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
@@ -215,6 +222,157 @@
                     </div>
                     <button class="btn btn-primary" style="width:100%" onclick="doResetPassword()">Generate Temporary
                         Password</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Renewal Reminder Banner (injected by JS) -->
+    <div id="renewal-banner" style="display:none"></div>
+
+    <!-- Notification Center Modal -->
+    <div class="modal-overlay" id="notifications-modal" onclick="closeNotificationsModal()">
+        <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px">
+            <div class="modal-header">
+                <div style="display:flex;align-items:center;gap:0.75rem">
+                    <div class="modal-header-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="modal-title">Notifications</div>
+                        <div class="modal-sub" id="notif-modal-sub">Recent activity</div>
+                    </div>
+                </div>
+                <button class="modal-close" onclick="closeNotificationsModal()">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="modal-body" id="notif-list" style="max-height:400px;overflow-y:auto;padding:0">
+            </div>
+        </div>
+    </div>
+
+    <!-- Flag Review Modal -->
+    <div class="modal-overlay" id="flag-review-modal" onclick="closeFlagModal()">
+        <div class="modal-box" onclick="event.stopPropagation()" style="max-width:420px">
+            <div class="modal-header">
+                <div style="display:flex;align-items:center;gap:0.75rem">
+                    <div class="modal-header-icon" style="background:rgba(201,125,16,0.1)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--nam-gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="modal-title">Flag Review</div>
+                        <div class="modal-sub">Report potentially fraudulent or defamatory content</div>
+                    </div>
+                </div>
+                <button class="modal-close" onclick="closeFlagModal()">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-space">
+                    <div style="background:rgba(201,125,16,0.06);border:1px solid rgba(201,125,16,0.25);border-radius:var(--radius);padding:0.875rem;font-size:0.875rem;color:var(--fg)">
+                        Flagged reviews are sent to a moderation queue and are not automatically removed. Our team will review within 3-5 business days.
+                    </div>
+                    <div>
+                        <label class="label">Reason for flagging <span class="req">*</span></label>
+                        <div class="select-wrap">
+                            <select class="input" id="flag-reason">
+                                <option value="">Select a reason...</option>
+                                <option value="fraudulent">Fraudulent / fake review</option>
+                                <option value="defamatory">Defamatory / false statements</option>
+                                <option value="competitor">Posted by a competitor</option>
+                                <option value="harassment">Harassment or threats</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="label">Additional details</label>
+                        <textarea class="input textarea" id="flag-details" rows="3" placeholder="Provide any context that will help our moderation team..."></textarea>
+                    </div>
+                    <div id="flag-err" class="form-err" style="display:none"></div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline" onclick="closeFlagModal()">Cancel</button>
+                        <button class="btn" style="background:var(--nam-gold);color:#fff" onclick="submitFlag()">Submit Flag</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logo Upload Modal -->
+    <div class="modal-overlay" id="logo-upload-modal" onclick="closeLogoModal()">
+        <div class="modal-box" onclick="event.stopPropagation()" style="max-width:400px">
+            <div class="modal-header">
+                <div class="modal-title">Upload Logo / Avatar</div>
+                <button class="modal-close" onclick="closeLogoModal()">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-space">
+                    <div id="logo-preview-wrap" style="text-align:center;padding:1rem 0">
+                        <div id="logo-preview-img" style="width:96px;height:96px;border-radius:50%;background:var(--border);margin:0 auto;display:flex;align-items:center;justify-content:center;overflow:hidden;border:2px solid var(--border)">
+                            <svg width="36" height="36" fill="none" stroke="var(--fg-muted)" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        </div>
+                        <div style="font-size:0.75rem;color:var(--fg-muted);margin-top:0.5rem">JPG, PNG or WebP - Max 2 MB</div>
+                    </div>
+                    <label class="btn btn-outline" style="cursor:pointer;justify-content:center;width:100%">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Choose Image
+                        <input type="file" accept="image/*" id="logo-file-input" style="display:none" onchange="previewLogoUpload(this)">
+                    </label>
+                    <div id="logo-err" class="form-err" style="display:none"></div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline" onclick="closeLogoModal()">Cancel</button>
+                        <button class="btn btn-primary" onclick="saveLogoUpload()">Save Logo</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtered CSV Export Modal -->
+    <div class="modal-overlay" id="csv-export-modal" onclick="closeCsvModal()">
+        <div class="modal-box" onclick="event.stopPropagation()" style="max-width:400px">
+            <div class="modal-header">
+                <div class="modal-title">Export Reviews as CSV</div>
+                <button class="modal-close" onclick="closeCsvModal()">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-space">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+                        <div><label class="label">From date</label><input class="input" id="csv-from" type="date"></div>
+                        <div><label class="label">To date</label><input class="input" id="csv-to" type="date"></div>
+                    </div>
+                    <div>
+                        <label class="label">Rating filter</label>
+                        <div class="select-wrap">
+                            <select class="input" id="csv-rating">
+                                <option value="all">All ratings</option>
+                                <option value="5">5 stars only</option>
+                                <option value="4">4 stars only</option>
+                                <option value="3">3 stars only</option>
+                                <option value="2">2 stars only</option>
+                                <option value="1">1 star only</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="csv-count" style="font-size:0.8125rem;color:var(--fg-muted)"></div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline" onclick="closeCsvModal()">Cancel</button>
+                        <button class="btn btn-primary" onclick="doFilteredCsvExport()">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Download CSV
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
