@@ -302,7 +302,7 @@ function renderRegisterForm() {
   const cats = CATEGORIES.map(
     (c) => `<option value="${c}">${esc(c)}</option>`
   ).join("");
-  return `<div class="form-space"><div class="biz-info-box"><p>Business registrations require a <strong>N$200/month</strong> subscription. Continue to subscription to view all benefits.</p></div>
+  return `<div class="form-space"><div class="biz-info-box"><p>Business registrations requires a <strong>N$200/month</strong> subscription.</p></div>
     <div><label class="label">Business Name <span class="req">*</span></label><input class="input" id="reg-biz" type="text" placeholder="Your business name"></div>
     <div><label class="label">Category <span class="req">*</span></label><div class="select-wrap"><select class="input" id="reg-cat"><option value="">Select a category…</option>${cats}</select></div></div>
     <div><label class="label">Email <span class="req">*</span></label><input class="input" id="reg-email" type="email" placeholder="business@example.com"></div>
@@ -659,7 +659,8 @@ function renderSettings(bizData) {
   )}</select></div></div><button class="btn btn-primary btn-sm" style="margin-top:1rem" onclick="saveProfileChanges()" ${
     !isActive ? "disabled" : ""
   }>Save Changes</button></div>
-    <div style="background:var(--card);border-radius:var(--radius);padding:1rem;border:1px solid var(--border)"><div style="font-weight:600;margin-bottom:0.875rem">Change Password</div><div class="form-space"><div><label class="label">New Password</label><input class="input" id="dash-new-pwd" type="password" placeholder="At least 6 characters"></div><div><label class="label">Confirm Password</label><input class="input" id="dash-confirm-pwd" type="password" placeholder="Repeat password"></div><button class="btn btn-primary btn-sm" onclick="saveDashPassword()">Save Password</button></div></div>`;
+    <div style="background:var(--card);border-radius:var(--radius);padding:1rem;border:1px solid var(--border);margin-bottom:1.5rem"><div style="font-weight:600;margin-bottom:0.875rem">Change Password</div><div class="form-space"><div><label class="label">New Password</label><input class="input" id="dash-new-pwd" type="password" placeholder="At least 6 characters"></div><div><label class="label">Confirm Password</label><input class="input" id="dash-confirm-pwd" type="password" placeholder="Repeat password"></div><button class="btn btn-primary btn-sm" onclick="saveDashPassword()">Save Password</button></div></div>
+    <div style="background:var(--card);border-radius:var(--radius);padding:1rem;border:1.5px solid rgba(139,26,14,0.25)"><div style="display:flex;align-items:flex-start;gap:0.75rem;margin-bottom:0.875rem"><svg width="18" height="18" fill="none" stroke="var(--nam-red)" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div><div style="font-weight:600;color:var(--nam-red)">Danger Zone</div><div style="font-size:0.8125rem;color:var(--fg-muted);margin-top:0.25rem">Permanently delete your business account and all associated data. This action cannot be undone.</div></div></div><button class="btn btn-sm" style="background:rgba(139,26,14,0.08);color:var(--nam-red);border:1.5px solid rgba(139,26,14,0.3)" onclick="openDeleteAccountModal()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>Delete Account</button></div>`;
 }
 async function saveProfileChanges() {
   const bizData = businesses.find((b) => b.id === currentBusiness.id);
@@ -714,6 +715,47 @@ async function saveDashPassword() {
     "dash-confirm-pwd"
   ).value = "";
 }
+
+// ----- Delete Account -----
+function openDeleteAccountModal() {
+  document.getElementById("delete-account-modal").classList.add("open");
+  document.getElementById("delete-confirm-input").value = "";
+  document.getElementById("delete-account-err").style.display = "none";
+  document.getElementById("confirm-delete-btn").disabled = true;
+}
+function closeDeleteAccountModal() {
+  document.getElementById("delete-account-modal").classList.remove("open");
+  document.getElementById("delete-confirm-input").value = "";
+  document.getElementById("delete-account-err").style.display = "none";
+}
+function onDeleteConfirmInput() {
+  const val = document.getElementById("delete-confirm-input").value.trim();
+  const expected = currentBusiness ? currentBusiness.businessName : "";
+  const btn = document.getElementById("confirm-delete-btn");
+  const matches = val.toLowerCase() === expected.toLowerCase();
+  btn.disabled = !matches;
+  btn.style.opacity = matches ? "1" : "0.5";
+  btn.style.cursor = matches ? "pointer" : "not-allowed";
+}
+function confirmDeleteAccount() {
+  const val = document.getElementById("delete-confirm-input").value.trim();
+  const err = document.getElementById("delete-account-err");
+  if (!currentBusiness) return;
+  if (val.toLowerCase() !== currentBusiness.businessName.toLowerCase()) {
+    err.textContent = "Business name does not match.";
+    err.style.display = "block";
+    return;
+  }
+  // Remove business record
+  businesses = businesses.filter((b) => b.id !== currentBusiness.id);
+  saveBusinesses();
+  // Clear session
+  setSession(null);
+  closeDeleteAccountModal();
+  toast("Your account has been permanently deleted.", "info");
+  renderPortal();
+}
+
 function renderRenewal(bizData) {
   document.getElementById(
     "dash-content"
@@ -1258,6 +1300,7 @@ document.addEventListener("DOMContentLoaded", () => {
       closeWriteReviewModal();
       closeReplyModal();
       closeForgotPasswordModal();
+      closeDeleteAccountModal();
     }
   });
 });
