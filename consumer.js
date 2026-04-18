@@ -433,7 +433,7 @@ function resetWriteReview() {
 function renderStarsInput() {
   const container = document.getElementById("wr-stars");
   if (!container) return;
-  container.innerHTML = [1, 2, 3, 4, 5]
+  container.innerHTML = [5, 4, 3, 2, 1]
     .map(
       (star) =>
         `<button type="button" class="star-btn" data-star="${star}" data-filled="${
@@ -447,9 +447,17 @@ function renderStarsInput() {
         }" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>`
     )
     .join("");
-  document.getElementById("wr-rating-word").textContent = wrRating
-    ? ["", "Terrible", "Poor", "Average", "Good", "Excellent"][wrRating]
-    : "";
+  const wordEl = document.getElementById("wr-rating-word");
+  const labels = ["", "Terrible", "Poor", "Average", "Good", "Excellent"];
+  wordEl.textContent = wrRating ? labels[wrRating] : "";
+  // Update label on hover without re-rendering DOM
+  container.addEventListener("mouseover", (e) => {
+    const btn = e.target.closest(".star-btn");
+    if (btn) wordEl.textContent = labels[+btn.dataset.star] || "";
+  });
+  container.addEventListener("mouseleave", () => {
+    wordEl.textContent = wrRating ? labels[wrRating] : "";
+  });
 }
 function setRating(n) {
   wrRating = n;
@@ -457,7 +465,7 @@ function setRating(n) {
   renderStarsInput();
 }
 function hoverStar(n) {
-  // No-op: hover is handled by CSS only to avoid DOM re-render swallowing touch clicks
+  // No-op: hover is handled via mouseover listener added in renderStarsInput
 }
 function submitWriteReview() {
   const biz = document.getElementById("wr-biz").value.trim();

@@ -165,6 +165,21 @@ body {
   background: #f0ece4;
   color: var(--fg);
 }
+.btn-danger {
+  background: rgba(139, 26, 14, 0.08);
+  color: var(--nam-red);
+  border: 1.5px solid rgba(139, 26, 14, 0.3);
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+}
+.btn-danger:hover {
+  background: rgba(139, 26, 14, 0.15);
+  border-color: var(--nam-red);
+  transform: none;
+}
+.btn-danger:focus-visible {
+  outline-color: var(--nam-red);
+}
 .btn-lg {
   padding: 0.875rem 2rem;
   font-size: 1rem;
@@ -1080,10 +1095,10 @@ footer {
   flex: 1;
 }
 
-/* Stars input */
 /* Star rating input */
 .stars-input {
-  display: flex;
+  display: inline-flex;
+  flex-direction: row-reverse;
   gap: 0.25rem;
   align-items: center;
 }
@@ -1108,19 +1123,20 @@ footer {
   transition: fill 0.12s, stroke 0.12s;
   pointer-events: none;
 }
-/* Filled state — set via JS data-filled attribute */
+/* Filled state */
 .star-btn[data-filled="true"] svg {
   fill: var(--nam-gold);
   stroke: var(--nam-gold);
 }
-/* Hover: fill all stars up to the hovered one using CSS sibling trick */
+/* Hover cascade: on hover, reset all, then re-fill hovered + preceding (reversed = following) */
 .stars-input:hover .star-btn svg {
   fill: none;
   stroke: #c8c0b0;
 }
-.star-btn:hover svg,
-.star-btn:hover ~ .star-btn svg {
-  /* reset siblings after hover — handled by reversing the row */
+.stars-input .star-btn:hover svg,
+.stars-input .star-btn:hover ~ .star-btn svg {
+  fill: var(--nam-gold);
+  stroke: var(--nam-gold);
 }
 .rating-word {
   font-size: 0.875rem;
