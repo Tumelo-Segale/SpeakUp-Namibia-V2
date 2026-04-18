@@ -28,6 +28,7 @@
 }
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 76px;
 }
 body {
   font-family: "Outfit", system-ui, sans-serif;
@@ -174,6 +175,16 @@ body {
   font-size: 0.8125rem;
   border-radius: var(--radius);
 }
+.btn:focus-visible {
+  outline: 3px solid var(--nam-blue);
+  outline-offset: 2px;
+}
+.btn-gold:focus-visible {
+  outline-color: var(--nam-gold);
+}
+.btn-outline-blue:focus-visible {
+  outline-color: var(--nam-blue);
+}
 
 /* ─── FORM ELEMENTS ──────────────────────────────────────────────── */
 .input {
@@ -289,7 +300,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 64px;
+  height: 70px;
   gap: 1rem;
 }
 .logo-wrap {
@@ -900,8 +911,11 @@ footer {
 }
 @media (min-width: 768px) {
   .footer-grid {
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1.4fr 1fr 1fr;
   }
+}
+.footer-brand {
+  max-width: 320px;
 }
 .footer-logo-row {
   display: flex;
@@ -1067,6 +1081,7 @@ footer {
 }
 
 /* Stars input */
+/* Star rating input */
 .stars-input {
   display: flex;
   gap: 0.25rem;
@@ -1082,10 +1097,30 @@ footer {
 .star-btn:hover {
   transform: scale(1.15);
 }
+.star-btn:focus-visible {
+  outline: 3px solid var(--nam-blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 .star-btn svg {
   width: 32px;
   height: 32px;
-  transition: all 0.15s;
+  transition: fill 0.12s, stroke 0.12s;
+  pointer-events: none;
+}
+/* Filled state — set via JS data-filled attribute */
+.star-btn[data-filled="true"] svg {
+  fill: var(--nam-gold);
+  stroke: var(--nam-gold);
+}
+/* Hover: fill all stars up to the hovered one using CSS sibling trick */
+.stars-input:hover .star-btn svg {
+  fill: none;
+  stroke: #c8c0b0;
+}
+.star-btn:hover svg,
+.star-btn:hover ~ .star-btn svg {
+  /* reset siblings after hover — handled by reversing the row */
 }
 .rating-word {
   font-size: 0.875rem;
@@ -1282,6 +1317,10 @@ footer {
 #how-works-modal .modal-box {
   max-width: 30rem;
 }
+/* Reply Modal */
+.reply-modal {
+  max-width: 36rem;
+}
 .hiw-step {
   display: flex;
   gap: 1rem;
@@ -1426,24 +1465,6 @@ footer {
     padding: 1.5rem 1rem;
   }
 }
-.biz-mobile-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-}
-.biz-hamburger {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--fg-muted);
-  padding: 0.5rem;
-}
-@media (min-width: 768px) {
-  .biz-mobile-header {
-    display: none;
-  }
-}
 
 /* Paywall */
 .paywall-hero {
@@ -1541,8 +1562,49 @@ footer {
 }
 
 /* Dashboard */
+.dashboard-container {
+  max-width: 100%;
+  width: 100%;
+}
+.biz-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+}
+@media (max-width: 480px) {
+  .biz-card {
+    padding: 1.25rem;
+  }
+}
+.biz-info-box {
+  background: var(--nam-blue);
+  background: linear-gradient(
+    135deg,
+    rgba(0, 53, 128, 0.08),
+    rgba(0, 53, 128, 0.04)
+  );
+  border: 1px solid rgba(0, 53, 128, 0.2);
+  border-left: 3px solid var(--nam-blue);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: var(--fg);
+}
+.biz-info-box strong {
+  color: var(--nam-blue);
+}
+.dash-eyebrow {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 0.25rem;
+}
 .dashboard-stats {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   margin-bottom: 1.5rem;
 }

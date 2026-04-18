@@ -76,7 +76,6 @@
                     </svg>Renew Subscription</button>
             </div>
             <div class="biz-sidebar-footer">
-                <div class="notification-badge" id="notificationBadge" style="display:none"></div>
                 <button class="biz-nav-item" onclick="doLogout()" style="color:var(--nam-red)"><svg fill="none"
                         stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
@@ -114,7 +113,7 @@
                             <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
                         </svg></div>
                     <div>
-                        <div class="modal-title">Write a Review as Business</div>
+                        <div class="modal-title">Write a Review</div>
                         <div class="modal-sub">Your review will appear publicly</div>
                     </div>
                 </div><button class="modal-close" onclick="closeWriteReviewModal()"><svg width="18" height="18"
@@ -125,8 +124,9 @@
             </div>
             <div class="modal-body">
                 <div class="form-space">
-                    <div><label class="label">Business Name <span class="req">*</span></label><input class="input"
-                            id="biz-wr-biz" type="text" readonly></div>
+                    <div><label class="label">Business You Are Reviewing <span class="req">*</span></label><input
+                            class="input" id="biz-wr-biz" type="text" placeholder="e.g. MTC Namibia, FNB, Shoprite…"
+                            autocomplete="off"></div>
                     <div><label class="label">Category <span class="req">*</span></label>
                         <div class="select-wrap"><select class="input" id="biz-wr-cat"
                                 style="padding:0.625rem 2.5rem 0.625rem 0.875rem"></select></div>
@@ -142,6 +142,9 @@
                     <div><label class="label">Your Story <span class="req">*</span></label><textarea
                             class="input textarea" id="biz-wr-content" rows="4"
                             placeholder="Tell us what happened..."></textarea></div>
+                    <div><label class="label">Your Name <span class="req">*</span></label><input class="input"
+                            id="biz-wr-name" type="text" placeholder="Name shown on the review" readonly
+                            style="background:var(--bg)"></div>
                     <div class="modal-footer" style="padding-top:0.5rem"><button class="btn btn-outline"
                             onclick="closeWriteReviewModal()">Cancel</button><button class="btn btn-primary"
                             id="biz-wr-submit" onclick="submitBusinessReview()">Publish Review</button></div>
@@ -168,7 +171,7 @@
                     placeholder="Write your public response as the verified business..."></textarea>
                 <div class="modal-footer" style="margin-top:1rem"><button class="btn btn-outline"
                         onclick="closeReplyModal()">Cancel</button><button class="btn btn-primary" id="submit-reply-btn"
-                        onclick="submitBusinessReply()">Post Reply</button></div>
+                        onclick="submitBusinessReply(this)">Post Reply</button></div>
             </div>
         </div>
     </div>
@@ -190,18 +193,27 @@
                     temporary password will be generated and displayed below.</p>
                 <div class="form-space">
                     <div><label class="label">Email</label><input class="input" id="reset-email" type="email"
-                            placeholder="business@example.com"></div>
+                            placeholder="business@example.com" onkeydown="if(event.key==='Enter')doResetPassword()">
+                    </div>
                     <div id="reset-err" class="form-err" style="display:none"></div>
                     <div id="temp-password-display"
-                        style="display:none; margin-top:1rem; text-align:center; background:var(--bg); padding:1rem; border-radius:var(--radius); border:1px solid var(--border);">
-                        <div style="font-size:0.75rem; color:var(--fg-muted); margin-bottom:0.25rem;">YOUR TEMPORARY
-                            PASSWORD</div>
-                        <div style="font-family:'JetBrains Mono',monospace; font-size:1.5rem; font-weight:700; letter-spacing:2px; word-break:break-all;"
+                        style="display:none; margin-top:1rem; text-align:center; background:var(--nam-dark); padding:1.5rem 1rem; border-radius:var(--radius); border:1px solid var(--border);">
+                        <div
+                            style="font-size:0.7rem; font-weight:700; letter-spacing:0.12em; color:rgba(255,255,255,0.5); margin-bottom:0.5rem; text-transform:uppercase;">
+                            Your Temporary Password</div>
+                        <div style="font-family:'JetBrains Mono',monospace; font-size:1.625rem; font-weight:800; letter-spacing:3px; word-break:break-all; color:#fff; margin-bottom:1rem; text-shadow:0 0 20px rgba(201,125,16,0.4);"
                             id="temp-pwd-value"></div>
-                        <button class="btn btn-outline btn-sm" style="margin-top:0.75rem;"
-                            onclick="copyTempPassword()">Copy to Clipboard</button>
+                        <button class="btn btn-gold" style="width:100%; justify-content:center;"
+                            onclick="copyTempPassword()">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"
+                                viewBox="0 0 24 24">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                            </svg>
+                            Copy to Clipboard
+                        </button>
                     </div>
-                    <button class="btn btn-primary" style="width:100%" onclick="doResetPassword()">Send Temporary
+                    <button class="btn btn-primary" style="width:100%" onclick="doResetPassword()">Generate Temporary
                         Password</button>
                 </div>
             </div>

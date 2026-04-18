@@ -158,10 +158,18 @@ function loadState() {
   }
 }
 function saveReviews() {
-  localStorage.setItem(STORAGE.REVIEWS, JSON.stringify(reviews));
+  try {
+    localStorage.setItem(STORAGE.REVIEWS, JSON.stringify(reviews));
+  } catch (e) {
+    console.warn("Could not save reviews:", e);
+  }
 }
 function saveBusinesses() {
-  localStorage.setItem(STORAGE.BUSINESSES, JSON.stringify(businesses));
+  try {
+    localStorage.setItem(STORAGE.BUSINESSES, JSON.stringify(businesses));
+  } catch (e) {
+    console.warn("Could not save businesses:", e);
+  }
 }
 function setSession(b) {
   currentBusiness = b;
@@ -510,8 +518,11 @@ function handlePaymentReturn() {
 function switchTab(tab) {
   currentTab = tab;
   renderDashboard();
-  if (window.innerWidth < 768)
+  if (window.innerWidth < 768) {
     document.getElementById("bizSidebar").classList.remove("open");
+    document.getElementById("ham-open").style.display = "block";
+    document.getElementById("ham-close").style.display = "none";
+  }
 }
 function updateActiveNav() {
   document
@@ -787,19 +798,34 @@ function openForgotPasswordModal() {
 }
 function closeForgotPasswordModal() {
   document.getElementById("forgot-password-modal").classList.remove("open");
+  document.getElementById("reset-email").value = "";
+  document.getElementById("reset-err").style.display = "none";
+  document.getElementById("temp-password-display").style.display = "none";
+  document.getElementById("temp-pwd-value").textContent = "";
+  tempPasswordValue = "";
 }
 async function doResetPassword() {
-  const email = document
-      .getElementById("reset-email")
-      .value.trim()
-      .toLowerCase(),
-    err = document.getElementById("reset-err"),
-    biz = businesses.find((b) => b.email === email);
+  const emailEl = document.getElementById("reset-email");
+  const email = emailEl.value.trim().toLowerCase();
+  const err = document.getElementById("reset-err");
+  const biz = businesses.find((b) => b.email === email);
+  if (!email) {
+    err.textContent = "Please enter your email address.";
+    err.style.display = "block";
+    return;
+  }
   if (!biz) {
     err.textContent = "No account found with that email.";
     err.style.display = "block";
     return;
   }
+  // Disable button while hashing
+  const btn = emailEl.closest(".form-space").querySelector(".btn-primary");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Generating…";
+  }
+  err.style.display = "none";
   const tempPassword = generateTempPassword(10);
   tempPasswordValue = tempPassword;
   const { hash, salt } = await hashPassword(tempPassword);
@@ -808,8 +834,12 @@ async function doResetPassword() {
   saveBusinesses();
   document.getElementById("temp-pwd-value").textContent = tempPassword;
   document.getElementById("temp-password-display").style.display = "block";
-  err.style.display = "none";
-  toast("Temporary password generated. Please copy it.", "info");
+  emailEl.value = "";
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = "Generate New Password";
+  }
+  toast("Temporary password generated. Please copy it before closing.", "info");
 }
 function copyTempPassword() {
   navigator.clipboard
@@ -822,79 +852,100 @@ function copyTempPassword() {
 function openWriteReviewModal() {
   const bizData = businesses.find((b) => b.id === currentBusiness.id);
   if (!checkSubscriptionAndWarn(bizData)) return;
-  document.getElementById("biz-wr-biz").value = currentBusiness.businessName;
+  // Business name is blank — reviewer must type who they are reviewing
+  document.getElementById("biz-wr-biz").value = "";
   const catSelect = document.getElementById("biz-wr-cat");
-  catSelect.innerHTML = CATEGORIES.map(
-    (c) =>
-      `<option value="${c}" ${
-        c === currentBusiness.category ? "selected" : ""
-      }>${esc(c)}</option>`
-  ).join("");
+  catSelect.innerHTML =
+    `<option value="">Select a category…</option>` +
+    CATEGORIES.map((c) => `<option value="${c}">${esc(c)}</option>`).join("");
   bizWrRating = 0;
   bizWrHover = 0;
   renderBizStarsInput();
   document.getElementById("biz-wr-title").value = "";
   document.getElementById("biz-wr-content").value = "";
+  // Your Name is pre-filled with the logged-in business name (read-only)
+  document.getElementById("biz-wr-name").value = currentBusiness.businessName;
   document.getElementById("write-review-modal").classList.add("open");
 }
 function closeWriteReviewModal() {
   document.getElementById("write-review-modal").classList.remove("open");
+  const btn = document.getElementById("biz-wr-submit");
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = "Publish Review";
+  }
 }
 function renderBizStarsInput() {
   const container = document.getElementById("biz-wr-stars");
-  const display = bizWrHover || bizWrRating;
+  if (!container) return;
   container.innerHTML = [1, 2, 3, 4, 5]
     .map(
       (star) =>
-        `<button type="button" class="star-btn" onclick="setBizRating(${star})" onmouseenter="hoverBizStar(${star})" onmouseleave="hoverBizStar(0)"><svg width="32" height="32" viewBox="0 0 24 24" fill="${
-          star <= display ? "var(--nam-gold)" : "none"
+        `<button type="button" class="star-btn" data-star="${star}" data-filled="${
+          star <= bizWrRating
+        }" onclick="setBizRating(${star})" aria-label="${star} star${
+          star > 1 ? "s" : ""
+        }"><svg width="32" height="32" viewBox="0 0 24 24" fill="${
+          star <= bizWrRating ? "var(--nam-gold)" : "none"
         }" stroke="${
-          star <= display ? "var(--nam-gold)" : "#c8c0b0"
+          star <= bizWrRating ? "var(--nam-gold)" : "#c8c0b0"
         }" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>`
     )
     .join("");
-  document.getElementById("biz-wr-rating-word").textContent = display
-    ? ["", "Terrible", "Poor", "Average", "Good", "Excellent"][display]
+  document.getElementById("biz-wr-rating-word").textContent = bizWrRating
+    ? ["", "Terrible", "Poor", "Average", "Good", "Excellent"][bizWrRating]
     : "";
 }
 function setBizRating(n) {
   bizWrRating = n;
+  bizWrHover = 0;
   renderBizStarsInput();
 }
 function hoverBizStar(n) {
-  bizWrHover = n;
-  renderBizStarsInput();
+  // No-op: hover handled by CSS to avoid touch click swallowing
 }
 function submitBusinessReview() {
   const bizData = businesses.find((b) => b.id === currentBusiness.id);
   if (!checkSubscriptionAndWarn(bizData)) return;
-  const biz =
-    document.getElementById("biz-wr-biz").value.trim() ||
-    currentBusiness.businessName;
+  const biz = document.getElementById("biz-wr-biz").value.trim();
   const cat = document.getElementById("biz-wr-cat").value;
   const title = document.getElementById("biz-wr-title").value.trim();
   const content = document.getElementById("biz-wr-content").value.trim();
+  const userName =
+    document.getElementById("biz-wr-name").value.trim() ||
+    currentBusiness.businessName;
   if (!biz || !cat || !title || !content || bizWrRating === 0) {
     toast("All fields are required, including a star rating.", "error");
     return;
   }
-  const newReview = {
-    id: Date.now(),
-    businessName: biz,
-    category: cat,
-    rating: bizWrRating,
-    title,
-    content,
-    userName: currentBusiness.businessName,
-    date: new Date().toISOString(),
-    comments: [],
-  };
-  reviews.unshift(newReview);
-  saveReviews();
-  toast("Your review has been published!");
-  closeWriteReviewModal();
-  if (currentTab === "consumerview") renderConsumerView();
-  else renderDashboard();
+  const btn = document.getElementById("biz-wr-submit");
+  if (btn.disabled) return;
+  btn.disabled = true;
+  btn.textContent = "Publishing…";
+  setTimeout(() => {
+    try {
+      const newReview = {
+        id: Date.now(),
+        businessName: biz,
+        category: cat,
+        rating: bizWrRating,
+        title,
+        content,
+        userName,
+        date: new Date().toISOString(),
+        comments: [],
+      };
+      reviews.unshift(newReview);
+      saveReviews();
+      toast("Your review has been published!");
+      closeWriteReviewModal();
+      if (currentTab === "consumerview") renderConsumerView();
+      else renderDashboard();
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Publish Review";
+    }
+  }, 400);
 }
 function openReplyModal(reviewId) {
   const bizData = businesses.find((b) => b.id === currentBusiness.id);
@@ -910,8 +961,13 @@ function openReplyModal(reviewId) {
 function closeReplyModal() {
   document.getElementById("reply-modal").classList.remove("open");
   currentReplyReviewId = null;
+  const btn = document.getElementById("submit-reply-btn");
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = "Post Reply";
+  }
 }
-function submitBusinessReply() {
+function submitBusinessReply(btn) {
   const bizData = businesses.find((b) => b.id === currentBusiness.id);
   if (!checkSubscriptionAndWarn(bizData)) return;
   if (!currentReplyReviewId) return;
@@ -922,6 +978,10 @@ function submitBusinessReply() {
   }
   const revIdx = reviews.findIndex((r) => r.id === currentReplyReviewId);
   if (revIdx === -1) return;
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Posting…";
+  }
   const rev = reviews[revIdx];
   const newComment = {
     id: "c" + Date.now() + Math.random().toString(36).slice(2),
@@ -933,6 +993,10 @@ function submitBusinessReply() {
   };
   reviews[revIdx] = { ...rev, comments: [...(rev.comments || []), newComment] };
   saveReviews();
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = "Post Reply";
+  }
   toast("Reply posted as verified business!");
   closeReplyModal();
   if (currentTab === "reviews")
@@ -944,6 +1008,7 @@ function submitBusinessReply() {
       )
     );
   else if (currentTab === "consumerview") renderConsumerView();
+  else renderDashboard();
 }
 function getFilteredConsumerReviews() {
   let f = [...reviews];
@@ -1186,6 +1251,13 @@ document.addEventListener("DOMContentLoaded", () => {
         main.style.marginLeft = "0";
         hamburger.style.display = "flex";
       }
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      closeWriteReviewModal();
+      closeReplyModal();
+      closeForgotPasswordModal();
     }
   });
 });

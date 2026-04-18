@@ -130,7 +130,11 @@ function loadState() {
   }
 }
 function saveReviews() {
-  localStorage.setItem(STORAGE.REVIEWS, JSON.stringify(reviews));
+  try {
+    localStorage.setItem(STORAGE.REVIEWS, JSON.stringify(reviews));
+  } catch (e) {
+    console.warn("Could not save reviews:", e);
+  }
 }
 function formatDate(iso) {
   return iso
@@ -402,6 +406,7 @@ function renderHero() {
 
 // ----- Write Review -----
 function openWriteReview() {
+  resetWriteReview();
   const sel = document.getElementById("wr-cat");
   sel.innerHTML =
     `<option value="">Select a category…</option>` +
@@ -427,28 +432,32 @@ function resetWriteReview() {
 }
 function renderStarsInput() {
   const container = document.getElementById("wr-stars");
-  const display = wrHover || wrRating;
+  if (!container) return;
   container.innerHTML = [1, 2, 3, 4, 5]
     .map(
       (star) =>
-        `<button type="button" class="star-btn" onclick="setRating(${star})" onmouseenter="hoverStar(${star})" onmouseleave="hoverStar(0)"><svg width="32" height="32" viewBox="0 0 24 24" fill="${
-          star <= display ? "var(--nam-gold)" : "none"
+        `<button type="button" class="star-btn" data-star="${star}" data-filled="${
+          star <= wrRating
+        }" onclick="setRating(${star})" aria-label="${star} star${
+          star > 1 ? "s" : ""
+        }"><svg width="32" height="32" viewBox="0 0 24 24" fill="${
+          star <= wrRating ? "var(--nam-gold)" : "none"
         }" stroke="${
-          star <= display ? "var(--nam-gold)" : "#c8c0b0"
+          star <= wrRating ? "var(--nam-gold)" : "#c8c0b0"
         }" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>`
     )
     .join("");
-  document.getElementById("wr-rating-word").textContent = display
-    ? ["", "Terrible", "Poor", "Average", "Good", "Excellent"][display]
+  document.getElementById("wr-rating-word").textContent = wrRating
+    ? ["", "Terrible", "Poor", "Average", "Good", "Excellent"][wrRating]
     : "";
 }
 function setRating(n) {
   wrRating = n;
+  wrHover = 0;
   renderStarsInput();
 }
 function hoverStar(n) {
-  wrHover = n;
-  renderStarsInput();
+  // No-op: hover is handled by CSS only to avoid DOM re-render swallowing touch clicks
 }
 function submitWriteReview() {
   const biz = document.getElementById("wr-biz").value.trim();
@@ -461,37 +470,41 @@ function submitWriteReview() {
     return;
   }
   const btn = document.getElementById("wr-submit");
+  if (btn.disabled) return; // prevent double-submit
   btn.disabled = true;
   btn.textContent = "Publishing…";
   setTimeout(() => {
-    const rev = {
-      id: Date.now(),
-      businessName: biz,
-      category: cat,
-      rating: wrRating,
-      title,
-      content,
-      userName: name,
-      date: new Date().toISOString(),
-      comments: [],
-    };
-    reviews.unshift(rev);
-    saveReviews();
-    toast("Your review has been published!");
-    closeWriteReview();
-    btn.disabled = false;
-    btn.innerHTML = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Publish Review`;
-    renderHero();
-    renderFilters();
-    renderReviews();
-    highlightId = rev.id;
-    setTimeout(() => {
-      scrollToReviews();
+    try {
+      const rev = {
+        id: Date.now(),
+        businessName: biz,
+        category: cat,
+        rating: wrRating,
+        title,
+        content,
+        userName: name,
+        date: new Date().toISOString(),
+        comments: [],
+      };
+      reviews.unshift(rev);
+      saveReviews();
+      toast("Your review has been published!");
+      closeWriteReview();
+      renderHero();
+      renderFilters();
+      renderReviews();
+      highlightId = rev.id;
       setTimeout(() => {
-        highlightId = null;
-        renderReviews();
-      }, 3000);
-    }, 200);
+        scrollToReviews();
+        setTimeout(() => {
+          highlightId = null;
+          renderReviews();
+        }, 3000);
+      }, 200);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Publish Review`;
+    }
   }, 400);
 }
 
@@ -740,6 +753,7 @@ document.addEventListener("DOMContentLoaded", () => {
       closeReviewDetail();
       closeHowWorks();
       closeMobileMenu();
+      document.getElementById("mobile-filter-panel").classList.remove("open");
     }
   });
   const last = localStorage.getItem(STORAGE.LAST_VISIT);
