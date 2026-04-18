@@ -302,7 +302,7 @@ function renderRegisterForm() {
   const cats = CATEGORIES.map(
     (c) => `<option value="${c}">${esc(c)}</option>`
   ).join("");
-  return `<div class="form-space"><div class="biz-info-box"><p>Business registrations require a <strong>N$200/month</strong> subscription.</p></div>
+  return `<div class="form-space"><div class="biz-info-box"><p>Business registrations require a <strong>N$200/month</strong> subscription. Continue to subscription to view all benefits.</p></div>
     <div><label class="label">Business Name <span class="req">*</span></label><input class="input" id="reg-biz" type="text" placeholder="Your business name"></div>
     <div><label class="label">Category <span class="req">*</span></label><div class="select-wrap"><select class="input" id="reg-cat"><option value="">Select a category…</option>${cats}</select></div></div>
     <div><label class="label">Email <span class="req">*</span></label><input class="input" id="reg-email" type="email" placeholder="business@example.com"></div>
